@@ -108,8 +108,8 @@ class Environment:
                 if start != target:
                     break
             target = self.get_random_free_cell_p()
-            deadline = self.t + self.rng.randint(N/2, N)
-            if i <= min(self.n_robots, 10):
+            deadline = self.t + self.rng.randint(N/2, 3*N)
+            if i <= min(self.n_robots, 20):
                 start_time = 0
             else:
                 start_time = self.rng.randint(1, self.max_time_steps)
@@ -181,6 +181,9 @@ class Environment:
         if len(actions) != len(self.robots):
             raise ValueError("The number of actions must match the number of robots.")
 
+        #print("Package env: ")
+        #print([p.status for p in self.packages])
+
         # -------- Process Movement --------
         proposed_positions = []
         # For each robot, compute the new position based on the movement action.
@@ -213,21 +216,23 @@ class Environment:
         # -------- Process Package Actions --------
         for i, robot in enumerate(self.robots):
             move, pkg_act = actions[i]
+            #print(i, move, pkg_act)
             # Pick up action.
             if pkg_act == '1':
-                if robot.carrying is None:
+                if robot.carrying == 0:
                     # Check for available packages at the current cell.
-                    for i in range(len(self.packages)):
-                        if self.packages[i].status == 'waiting' and self.packages[i].start == robot.position and self.packages[i].start_time <= self.t:
+                    for j in range(len(self.packages)):
+                        if self.packages[j].status == 'waiting' and self.packages[j].start == robot.position and self.packages[j].start_time <= self.t:
                             # Pick the package with the smallest package_id.
-                            package_id = self.packages[i].package_id
+                            package_id = self.packages[j].package_id
                             robot.carrying = package_id
-                            self.packages[i].status = 'in_transit'
+                            self.packages[j].status = 'in_transit'
+                            # print(package_id, 'in transit')
                             break
 
             # Drop action.
             elif pkg_act == '2':
-                if robot.carrying is not None:
+                if robot.carrying != 0:
                     package_id = robot.carrying
                     target = self.packages[package_id - 1].target
                     # Check if the robot is at the target position.
@@ -316,19 +321,21 @@ if __name__=="__main__":
     print("Initial State:", state)
     print("Initial State:")
     env.render()
+
+    # Agents
+    # Initialize agents
+    from greedyagent import GreedyAgents as Agents
+    agents = Agents()   # You should define a default parameters here
+    agents.init_agents(state) # You have a change to init states which can be used or not. Depend on your choice
+    print("Agents initialized.")
     
     # Example actions for robots
     list_actions = ['S', 'L', 'R', 'U', 'D']
     n_robots = len(state['robots'])
     done = False
+    t = 0
     while not done:
-        actions = []
-        for i in range(n_robots):
-            move = np.random.randint(0, len(list_actions))
-            pkg_act = np.random.randint(0, 3)
-            actions.append((list_actions[move], str(pkg_act)))
-        print(f"Actions: {actions}")
-        # Take a step in the environment    
+        actions = agents.get_actions(state) 
         state, reward, done, infos = env.step(actions)
     
         print("\nState after step:")
@@ -338,4 +345,9 @@ if __name__=="__main__":
         print("Time step:", env.t)
         print("Packages:", state['packages'])
         print("Robots:", state['robots'])
+
+        # For debug purpose
+        t += 1
+        if t == 100:
+            break
     

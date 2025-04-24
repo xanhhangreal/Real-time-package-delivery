@@ -1,5 +1,6 @@
 from env import Environment
-from agent import Agents
+#from agent import Agents
+from greedyagent import GreedyAgents as Agents
 
 import numpy as np
 
@@ -23,12 +24,15 @@ if __name__=="__main__":
     state = env.reset()
     agents = Agents()
     agents.init_agents(state)
-
+    print(state)
     done = False
+    t = 0
     while not done:
         actions = agents.get_actions(state)
         next_state, reward, done, infos = env.step(actions)
         state = next_state
+
+        t += 1
 
     print("Episode finished")
     print("Total reward:", infos['total_reward'])
