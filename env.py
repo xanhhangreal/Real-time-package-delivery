@@ -107,7 +107,7 @@ class Environment:
                 target = self.get_random_free_cell_p()
                 if start != target:
                     break
-            target = self.get_random_free_cell_p()
+            
             deadline = self.t + self.rng.randint(N/2, 3*N)
             if i <= min(self.n_robots, 20):
                 start_time = 0
@@ -187,6 +187,8 @@ class Environment:
         # -------- Process Movement --------
         proposed_positions = []
         # For each robot, compute the new position based on the movement action.
+        old_pos = {}
+        next_pos = {}
         for i, robot in enumerate(self.robots):
             move, pkg_act = actions[i]
             new_pos = self.compute_new_position(robot.position, move)
@@ -194,18 +196,58 @@ class Environment:
             if not self.valid_position(new_pos):
                 new_pos = robot.position  # Invalid moves result in no change.
             proposed_positions.append(new_pos)
+            old_pos[robot.position] = i
+            next_pos[new_pos] = i
 
-        # Resolve collisions: if multiple robots try to move into the same cell,
-        # the robot with lower index wins; the others remain in place.
+        moved_robots = [0 for _ in range(len(self.robots))]
+        computed_moved = [0 for _ in range(len(self.robots))]
         final_positions = [None] * len(self.robots)
         occupied = {}  # Dictionary to record occupied cells.
-        for i, pos in enumerate(proposed_positions):
-            if pos in occupied:
-                final_positions[i] = self.robots[i].position
-            else:
-                occupied[pos] = i
-                final_positions[i] = pos
+        while True:
+            updated = False
+            for i in range(len(self.robots)):
+            
+                if computed_moved[i] != 0: 
+                    continue
 
+                pos = self.robots[i].position
+                new_pos = proposed_positions[i]
+                can_move = False
+                if new_pos not in old_pos:
+                    can_move = True
+                else:
+                    j = old_pos[new_pos]
+                    if (j != i) and (computed_moved[j] == 0): # We must wait for the conflict resolve
+                        continue
+                    # We can decide where the robot can go now
+                    can_move = True
+
+                if can_move:
+                    # print("Updated: ", i, new_pos)
+                    if new_pos not in occupied:
+                        occupied[new_pos] = i
+                        final_positions[i] = new_pos
+                        computed_moved[i] = 1
+                        moved_robots[i] = 1
+                        updated = True
+                    else:
+                        new_pos = pos
+                        occupied[new_pos] = i
+                        final_positions[i] = pos
+                        computed_moved[i] = 1
+                        moved_robots[i] = 0
+                        updated = True
+
+                if updated:
+                    break
+
+            if not updated:
+                break
+        #print("Computed postions: ", final_positions)
+        for i in range(len(self.robots)):
+            if computed_moved[i] == 0:
+                final_positions[i] = self.robots[i].position 
+        
         # Update robot positions and apply movement cost when applicable.
         for i, robot in enumerate(self.robots):
             move, pkg_act = actions[i]
@@ -310,9 +352,9 @@ class Environment:
         grid_copy = [row[:] for row in self.grid]
         for i, robot in enumerate(self.robots):
             r, c = robot.position
-            grid_copy[r][c] = 'R'
+            grid_copy[r][c] = 'R%i'%i
         for row in grid_copy:
-            print(' '.join(str(cell) for cell in row))
+            print('\t'.join(str(cell) for cell in row))
         
 
 if __name__=="__main__":
