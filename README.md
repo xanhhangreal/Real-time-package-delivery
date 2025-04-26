@@ -14,7 +14,13 @@ The seeds are given at later time.
 
 ```python main.py --seed 10 --max_time_steps 1000 --map map5.txt --num_agents 10 --n_packages 1000```
 
+# For RL testing
+- You can use `simple_PPO.ipynb` as the starting point.
+- Avoid modify the class `Env`, you can try to modify the `convert_state` function or `reward_shaping`
+- You can choose to use or change the standard `PPO`. Note that: It is not easy to match the greedy agent, using RL.
+
+
 # TODO:
 - [x]: Add BFS agents
 - [x]: Add test scripts
-- [ ]: Add RL agents
+- [x]: Add RL agents
