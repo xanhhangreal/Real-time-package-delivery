@@ -108,12 +108,12 @@ class Environment:
                 if start != target:
                     break
             
-            deadline = self.t + self.rng.randint(N/2, 3*N)
+            to_deadline = 10 + self.rng.randint(N/2, 3*N)
             if i <= min(self.n_robots, 20):
                 start_time = 0
             else:
                 start_time = self.rng.randint(1, self.max_time_steps)
-            list_packages.append((start_time, start, target, deadline))
+            list_packages.append((start_time, start, target, start_time + to_deadline ))
 
         list_packages.sort(key=lambda x: x[0])
         for i in range(self.n_packages):
